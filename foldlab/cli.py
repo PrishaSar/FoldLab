@@ -119,7 +119,7 @@ def build_parser() -> argparse.ArgumentParser:
     anneal.add_argument("--steps", type=int, default=DEFAULT_ANNEAL_STEPS)
     anneal.add_argument("--gif", type=Path)
 
-    sub.add_parser("demo-short", help="exhaustive fold of the designing 14-mer")
+    sub.add_parser("demo-short", help="exhaustive fold of sequence 14.1")
     sub.add_parser("demo-long", help="anneal HP-20 at seed 0 for 30000 steps")
     sub.add_parser("bench", help="time exhaustive search at lengths 8, 10, 12, 14, and 16")
     return parser

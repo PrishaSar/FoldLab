@@ -12,7 +12,7 @@ Annealing is deterministic for a given sequence, seed, and step count. The repor
 
 | Name | Sequence | How Phase 1 folds it |
 | --- | --- | --- |
-| 14.1 | `HPHPHHPHPHHPPH` | Exhaustive. The designing 14-mer from Schiemann, Bachmann, and Janke, arXiv:0710.4074. |
+| 14.1 | `HPHPHHPHPHHPPH` | Exhaustive. Sequence 14.1 from Bachmann and Janke, arXiv:0710.4074, folded here on the square lattice. |
 | HP-20 | `HPHPPHHPHPPHPHHPPHPH` | Annealing. Unger and Moult, J. Mol. Biol. 235:75 (1993). |
 | HP-24 | `HHPPHPPHPPHPPHPPHPPHPPHH` | Annealing, same source. Not the default clip. |
 
@@ -46,9 +46,22 @@ python -m foldlab anneal HHPPHPPHPPHPPHPPHPPHPPHH --seed 0
 
 ## Measured on this machine
 
-The enumeration table below is filled from `python -m foldlab bench` (all-H chains, so every bead can score). Counts are symmetry-reduced conformations. Seconds include scoring every conformation. Demo energies are filled from `demo-short` and `demo-long` on the same machine.
+`python -m foldlab bench` enumerates all-H chains, so every bead can score. Counts are symmetry-reduced conformations (first bead at the origin, first step along +x), which is \(c_{N-1}/4\). Seconds are wall-clock time for that count and the scoring, from one run, rounded to milliseconds. Length 8 finished in under 1 ms.
 
-_Not yet recorded._
+| Length | Conformations | All-H energy | Seconds |
+| --- | ---: | ---: | ---: |
+| 8 | 543 | −3 | < 0.001 |
+| 10 | 4,067 | −4 | 0.003 |
+| 12 | 30,073 | −6 | 0.022 |
+| 14 | 220,375 | −7 | 0.165 |
+| 16 | 1,604,149 | −9 | 1.222 |
+
+Two extra beads take the count from 220,375 at length 14 to 1,604,149 at length 16, about 7.3×, which is why exhaustive search stops at 14. Length 16 all-H scored −9. A filled 4×4 has 24 lattice edges and the chain uses 15 of them as bonds, so nine is the most contacts that square can hold.
+
+Demos from the same machine:
+
+- `demo-short` on 14.1: exhaustive, energy **−6**, 220,375 conformations, 0.138 s. Six H–H contacts.
+- `demo-long` on HP-20: annealing, seed 0, 30,000 steps, energy **−8**, 1.554 s. Eight H–H contacts. The same schedule at seeds 1 and 4 scored −9.
 
 ## Out of scope
 

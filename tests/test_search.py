@@ -12,6 +12,7 @@ from foldlab.search import (
     iter_scored_conformations,
     simulated_annealing,
 )
+from foldlab.sequences import DESIGNING_14
 
 
 class ExhaustiveTests(unittest.TestCase):
@@ -36,6 +37,13 @@ class ExhaustiveTests(unittest.TestCase):
         result = exhaustive_search("HHPPHH")
         self.assertEqual(result.energy, -2)
         self.assertEqual(energy(result.sequence, result.coords), -2)
+        self.assertTrue(is_self_avoiding(result.coords))
+
+    def test_sequence_14_1_on_the_square_lattice(self):
+        result = exhaustive_search(DESIGNING_14)
+        self.assertEqual(result.n_conformations, 220375)
+        self.assertEqual(result.energy, -6)
+        self.assertEqual(energy(result.sequence, result.coords), -6)
         self.assertTrue(is_self_avoiding(result.coords))
 
     def test_incremental_energy_matches_spec(self):
