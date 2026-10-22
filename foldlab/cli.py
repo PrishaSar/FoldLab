@@ -19,8 +19,10 @@ from foldlab.search import (
 from foldlab.sequences import DESIGNING_14, HP20, HP24
 
 BENCH_LENGTHS = (8, 10, 12, 14, 16)
-# GIF delay for demo-long. Matplotlib stores int(1000 / fps) milliseconds.
-DEMO_LONG_FRAME_MS = 300
+# GIF timing for demo-long. Matplotlib stores int(1000 / fps) milliseconds,
+# then the merged final hold is set on its own.
+DEMO_LONG_FRAME_MS = 800
+DEMO_LONG_HOLD_MS = 6000
 
 
 def _print_result(result) -> None:
@@ -72,6 +74,7 @@ def _anneal(
     gif: Path | None,
     title: str | None = None,
     frame_ms: int | None = None,
+    hold_ms: int | None = None,
 ):
     try:
         result = simulated_annealing(sequence, seed=seed, steps=steps)
@@ -80,7 +83,13 @@ def _anneal(
     _print_result(result)
     if gif is not None:
         fps = 8 if frame_ms is None else 1000 / frame_ms
-        written = save_trajectory_gif(gif, result, title=title or result.sequence, fps=fps)
+        written = save_trajectory_gif(
+            gif,
+            result,
+            title=title or result.sequence,
+            fps=fps,
+            hold_ms=hold_ms,
+        )
         print(f"wrote:          {written}")
     return result
 
@@ -152,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
             gif=Path("artifacts/demo-long.gif"),
             title="HP-20",
             frame_ms=DEMO_LONG_FRAME_MS,
+            hold_ms=DEMO_LONG_HOLD_MS,
         )
     elif args.cmd == "bench":
         _bench()

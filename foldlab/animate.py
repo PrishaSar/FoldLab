@@ -162,7 +162,26 @@ def save_fold_gif(path, sequence: str, coords, title: str = "HP fold", fps: int 
         plt.close(fig)
 
 
-def save_trajectory_gif(path, result, title: str = "HP fold", fps: float = 8) -> Path:
+def set_last_gif_delay_ms(path, hold_ms: int) -> None:
+    """Set the delay of the last GIF frame. Delay is stored in centiseconds."""
+    path = Path(path)
+    data = bytearray(path.read_bytes())
+    last = data.rfind(b"\x21\xF9\x04")
+    if last < 0:
+        raise ValueError(f"{path} has no GIF frame delay")
+    centiseconds = int(round(hold_ms / 10))
+    data[last + 4] = centiseconds & 0xFF
+    data[last + 5] = (centiseconds >> 8) & 0xFF
+    path.write_bytes(data)
+
+
+def save_trajectory_gif(
+    path,
+    result,
+    title: str = "HP fold",
+    fps: float = 8,
+    hold_ms: int | None = None,
+) -> Path:
     """Animate the annealing trajectory, then hold on the best fold."""
     if not result.trajectory:
         raise ValueError("trajectory is empty")
@@ -192,6 +211,9 @@ def save_trajectory_gif(path, result, title: str = "HP fold", fps: float = 8) ->
 
         draws.append(draw)
     try:
-        return _write(fig, Path(path), draws, fps)
+        written = _write(fig, Path(path), draws, fps)
     finally:
         plt.close(fig)
+    if hold_ms is not None and written.suffix.lower() == ".gif":
+        set_last_gif_delay_ms(written, hold_ms)
+    return written

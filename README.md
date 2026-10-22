@@ -34,7 +34,7 @@ python -m foldlab bench
 
 `demo-short` enumerates the 14-mer and writes `artifacts/demo-short.gif`: the optimal chain drawn one bead at a time, then its H–H contacts.
 
-`demo-long` anneals HP-20 for 30,000 steps at seed 0 and writes `artifacts/demo-long.gif`: the search trajectory (chain, contacts, step, temperature, current energy, best energy), then a hold on the best fold. Each conformation stays on screen for 300 ms. The hold is ten of those frames.
+`demo-long` anneals HP-20 for 30,000 steps at seed 0 and writes `artifacts/demo-long.gif`: the search trajectory (chain, contacts, step, temperature, current energy, best energy), then a hold on the best fold. Each conformation stays on screen for 800 ms. The final hold stays up for 6 s.
 
 ```bash
 python -m foldlab exhaustive HPHPHHPHPHHPPH --gif artifacts/hp14.gif
