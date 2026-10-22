@@ -141,6 +141,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("demo-short", help="exhaustive fold of sequence 14.1")
     sub.add_parser("demo-long", help="anneal HP-20 at seed 0 for 30000 steps")
     sub.add_parser("bench", help="time exhaustive search at lengths 8, 10, 12, 14, and 16")
+    sub.add_parser("phase2", help="lysozyme and hemoglobin figures from the cached PDB files")
     return parser
 
 
@@ -165,6 +166,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     elif args.cmd == "bench":
         _bench()
+    elif args.cmd == "phase2":
+        from foldlab.phase2 import run_phase2
+
+        run_phase2(Path("artifacts"))
     else:
         parser.error(f"unknown command {args.cmd}")
     return 0

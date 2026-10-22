@@ -1,6 +1,6 @@
 # FoldLab
 
-FoldLab folds a hydrophobic–polar (HP) chain on the 2D square lattice. Phase 1 searches that toy model and writes an animation of the fold. It does not read PDB files or score real proteins.
+FoldLab has two pieces. Phase 1 folds a hydrophobic–polar (HP) chain on the 2D square lattice and writes an animation. Phase 2 reads published crystal structures, scores them on the Kyte–Doolittle scale, and draws the same H/P classes on the real fold.
 
 A chain is a string of `H` and `P`. Beads occupy distinct lattice sites, and successive beads are orthogonal neighbors. The energy is −1 for every pair of H beads that sit on orthogonal neighboring sites and are not consecutive in the sequence. A straight chain scores 0. Lower is better.
 
@@ -42,7 +42,7 @@ python -m foldlab anneal HPHPPHHPHPPHPHHPPHPH --seed 0 --steps 30000 --gif artif
 python -m foldlab anneal HHPPHPPHPPHPPHPPHPPHPPHH --seed 0
 ```
 
-`exhaustive` refuses a chain longer than 14. Dependencies are NumPy and matplotlib only. Pillow comes in with matplotlib and encodes the GIF; if it is missing, the writer saves an `.mp4` with the same stem.
+`exhaustive` refuses a chain longer than 14. Phase 1 uses NumPy and matplotlib. Pillow comes in with matplotlib and encodes the GIF; if it is missing, the writer saves an `.mp4` with the same stem. Phase 2 also uses BioPython and py3Dmol.
 
 ## Measured on this machine
 
@@ -63,6 +63,19 @@ Demos from the same machine:
 - `demo-short` on 14.1: exhaustive, energy **−6**, 220,375 conformations, 0.138 s. Six H–H contacts.
 - `demo-long` on HP-20: annealing, seed 0, 30,000 steps, energy **−8**, 1.554 s. Eight H–H contacts. The same schedule at seeds 1 and 4 scored −9.
 
+## Phase 2
+
+`python -m foldlab phase2` reads the cached files `data/1lyz.pdb` and `data/2hhb.pdb` and writes four figures under `artifacts/`. If a cache file is missing it is downloaded from RCSB once. The 3Dmol script is cached at `data/3dmol-min.js` and inlined into the HTML, so the page opens on its own.
+
+Hen egg-white lysozyme is 1LYZ. A contact is a Cα pair at most 8 Å apart with sequence separation at least 4. On this file that is **311** contacts. A residue is H when its Kyte–Doolittle score is greater than 0, and P otherwise. 1LYZ has 45 H and 84 P. Mean Cα distance to the centroid is 11.28 Å for H and 14.08 Å for P, so the hydrophobic set sits closer to the core. HELIX and SHEET records label 35 helix residues, 20 sheet residues, and 74 coil.
+
+The sickle-cell figure uses 2HHB, deoxy hemoglobin A, where both β chains still have glutamate at residue 6. Valine scores 4.2 on the same scale, so the class of that site would change from P to H. The drawing relabels the published site. It does not rebuild a side chain, and it is not a recipe for making the variant.
+
+```bash
+python -m foldlab phase2
+```
+
 ## Out of scope
 
-Phase 2 is not in this tree: no PDB, BioPython, py3Dmol, lysozyme, sickle-cell hemoglobin, contact maps, or Kyte–Doolittle hydropathy. No database, auth, or web service.
+No expression, purification, synthesis, or wet-lab mutagenesis. No database, auth, or web service.
+
