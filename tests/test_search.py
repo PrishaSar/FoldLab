@@ -55,6 +55,13 @@ class ExhaustiveTests(unittest.TestCase):
 
 
 class AnnealTests(unittest.TestCase):
+    def test_demo_long_frame_delay_is_300_ms(self):
+        from foldlab.cli import DEMO_LONG_FRAME_MS
+
+        self.assertEqual(DEMO_LONG_FRAME_MS, 300)
+        # Matplotlib's Pillow writer stores int(1000 / fps) milliseconds.
+        fps = 1000 / DEMO_LONG_FRAME_MS
+        self.assertEqual(int(1000 / fps), 300)
     def test_same_seed_reproduces_the_fold(self):
         sequence = "HPHPPHHPHP"
         first = simulated_annealing(sequence, seed=1, steps=200)

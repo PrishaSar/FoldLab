@@ -110,7 +110,7 @@ def _draw(ax, sequence: str, coords, title: str, show_contacts: bool) -> None:
         spine.set_color("#e7e5e4")
 
 
-def _write(fig, path: Path, draw_frames, fps: int) -> Path:
+def _write(fig, path: Path, draw_frames, fps: float) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     from matplotlib.animation import FFMpegWriter, PillowWriter
@@ -162,7 +162,7 @@ def save_fold_gif(path, sequence: str, coords, title: str = "HP fold", fps: int 
         plt.close(fig)
 
 
-def save_trajectory_gif(path, result, title: str = "HP fold", fps: int = 8) -> Path:
+def save_trajectory_gif(path, result, title: str = "HP fold", fps: float = 8) -> Path:
     """Animate the annealing trajectory, then hold on the best fold."""
     if not result.trajectory:
         raise ValueError("trajectory is empty")
