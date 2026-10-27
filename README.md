@@ -75,6 +75,14 @@ The sickle-cell figure uses 2HHB, deoxy hemoglobin A, where both β chains still
 python -m foldlab phase2
 ```
 
+## Energy model
+
+`python -m foldlab.learn` builds `data/hp_labels.csv` and trains a small transformer that predicts the lattice energy. Lengths 8, 10, 12, and 14 are labeled by exhaustive search. Lengths 16 and 20 are labeled by annealing for 4,000 steps at seed 0, which is the best energy seen, not a proven optimum. The hold-out uses split seed 0. The binary view calls a chain low-energy when its label is at or below the training-set median. PyTorch is the extra dependency. The unit test loads the saved csv and does not retrain.
+
+```bash
+python -m foldlab.learn
+```
+
 ## Out of scope
 
 No expression, purification, synthesis, or wet-lab mutagenesis. No database, auth, or web service.
