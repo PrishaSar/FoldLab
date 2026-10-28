@@ -1,6 +1,6 @@
 # FoldLab
 
-FoldLab has two pieces. Phase 1 folds a hydrophobic–polar (HP) chain on the 2D square lattice and writes an animation. Phase 2 reads published crystal structures, scores them on the Kyte–Doolittle scale, and draws the same H/P classes on the real fold.
+FoldLab reads published crystal structures, scores them on the Kyte–Doolittle scale, and draws the same H/P classes on the real fold.
 
 A chain is a string of `H` and `P`. Beads occupy distinct lattice sites, and successive beads are orthogonal neighbors. The energy is −1 for every pair of H beads that sit on orthogonal neighboring sites and are not consecutive in the sequence. A straight chain scores 0. Lower is better.
 
