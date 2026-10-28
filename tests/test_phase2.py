@@ -47,6 +47,17 @@ class ContactMapTests(unittest.TestCase):
         self.assertEqual(by_number[1], "E")
         self.assertEqual(by_number[20], "C")
 
+    def test_cached_myoglobin_contacts(self):
+        chains = load_chains(DATA_DIR / "1mbn.pdb")
+        residues = chains["A"]
+        pairs = ca_contacts(residues)
+        seps = [abs(residues[i].resseq - residues[j].resseq) for i, j in pairs]
+        self.assertEqual(len(residues), 153)
+        self.assertEqual(len(pairs), 262)
+        self.assertEqual(sum(sep <= 6 for sep in seps), 147)
+        self.assertEqual(sum(res.ss == "H" for res in residues), 118)
+        self.assertEqual(sum(res.ss == "E" for res in residues), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

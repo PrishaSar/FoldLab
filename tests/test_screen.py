@@ -14,6 +14,7 @@ class ScreenTests(unittest.TestCase):
             "Short toy fold",
             "Long toy fold",
             "Lysozyme pictures",
+            "Compare maps",
             "Sickle-cell picture",
             "Transformer score",
             "Train again",

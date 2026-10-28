@@ -43,6 +43,8 @@ FILES = {
     "lysozyme-contact-map.png": "image/png",
     "lysozyme-hydrophobicity.png": "image/png",
     "lysozyme-hp-core.html": "text/html; charset=utf-8",
+    "myoglobin-contact-map.png": "image/png",
+    "contact-compare.png": "image/png",
     "sickle-cell-glu6val.png": "image/png",
 }
 
@@ -99,6 +101,7 @@ PAGE = """<!DOCTYPE html>
     <button type="button" data-run="short">Short toy fold</button>
     <button type="button" data-run="long">Long toy fold</button>
     <button type="button" data-run="lysozyme">Lysozyme pictures</button>
+    <button type="button" data-run="compare">Compare maps</button>
     <button type="button" data-run="sickle">Sickle-cell picture</button>
     <button type="button" data-run="score">Transformer score</button>
     <button type="button" class="quiet" data-run="train">Train again</button>
@@ -283,6 +286,31 @@ def run_lysozyme() -> dict:
     }
 
 
+def run_compare() -> dict:
+    pictures = _pictures()
+    lysozyme = pictures["lysozyme"]
+    myoglobin = pictures["myoglobin"]
+    return {
+        "text": (
+            "Same rule for both: backbone atoms within 8 Å, at least 4 residues apart. "
+            f"Lysozyme, code 1LYZ: {lysozyme['residues']} residues, {lysozyme['contacts']} close pairs, "
+            f"{lysozyme['near']} of them only 4 to 6 residues apart. "
+            f"Myoglobin, code 1MBN: {myoglobin['residues']} residues, {myoglobin['contacts']} close pairs, "
+            f"{myoglobin['near']} of them only 4 to 6 residues apart. "
+            "Myoglobin is almost all helix. Lysozyme mixes helix and sheet."
+        ),
+        "images": [
+            _image(
+                "contact-compare.png",
+                "Lysozyme and myoglobin contact maps",
+                "Lysozyme on the left, myoglobin on the right.",
+            ),
+            _image("lysozyme-contact-map.png", "Lysozyme contact map", "Lysozyme, 1LYZ."),
+            _image("myoglobin-contact-map.png", "Myoglobin contact map", "Myoglobin, 1MBN."),
+        ],
+    }
+
+
 def run_sickle() -> dict:
     sickle = _pictures()["sickle"]
     site = (
@@ -319,6 +347,7 @@ ACTIONS = {
     "short": run_short_fold,
     "long": run_long_fold,
     "lysozyme": run_lysozyme,
+    "compare": run_compare,
     "sickle": run_sickle,
     "score": saved_score,
     "train": run_train,

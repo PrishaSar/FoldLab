@@ -27,6 +27,7 @@ PAPER = "#fffbf5"
 INK = "#1c1917"
 MUTED = "#57534e"
 LYSOZYME_ID = "1LYZ"
+MYOGLOBIN_ID = "1MBN"
 HEMOGLOBIN_ID = "2HHB"
 
 
@@ -46,7 +47,7 @@ def _style(ax) -> None:
         spine.set_color("#e7e5e4")
 
 
-def write_contact_map(residues, pairs, path: Path) -> int:
+def write_contact_map(residues, pairs, path: Path, title: str | None = None) -> int:
     matrix = contact_matrix(len(residues), pairs)
     n = len(residues)
     fig, ax = plt.subplots(figsize=(6.6, 6.2), dpi=140)
@@ -61,7 +62,8 @@ def write_contact_map(residues, pairs, path: Path) -> int:
         extent=(0.5, n + 0.5, n + 0.5, 0.5),
     )
     ax.set_title(
-        f"1LYZ Cα contacts, ≤ {CONTACT_CUTOFF:.0f} Å, |i−j| ≥ {MIN_SEPARATION}",
+        title
+        or f"1LYZ Cα contacts, ≤ {CONTACT_CUTOFF:.0f} Å, |i−j| ≥ {MIN_SEPARATION}",
         color=INK,
         pad=10,
     )
@@ -150,7 +152,80 @@ def write_lysozyme(out_dir: Path) -> dict:
     )
     hydro["contacts"] = contacts
     hydro["residues"] = len(residues)
+    hydro.update(_span_counts(residues, pairs))
     return hydro
+
+
+def _span_counts(residues, pairs) -> dict[str, int]:
+    """How far apart the two residues are along the chain."""
+    near = mid = far = 0
+    for i, j in pairs:
+        sep = abs(residues[i].resseq - residues[j].resseq)
+        if sep <= 6:
+            near += 1
+        elif sep <= 20:
+            mid += 1
+        else:
+            far += 1
+    return {"near": near, "mid": mid, "far": far}
+
+
+def write_myoglobin(out_dir: Path) -> dict:
+    """Sperm whale myoglobin, same Cα rule as lysozyme."""
+    path = cached_pdb(MYOGLOBIN_ID)
+    residues = load_chains(path)["A"]
+    pairs = ca_contacts(residues)
+    contacts = write_contact_map(
+        residues,
+        pairs,
+        out_dir / "myoglobin-contact-map.png",
+        title=f"1MBN Cα contacts, ≤ {CONTACT_CUTOFF:.0f} Å, |i−j| ≥ {MIN_SEPARATION}",
+    )
+    return {
+        "residues": len(residues),
+        "contacts": contacts,
+        "n_helix": sum(res.ss == "H" for res in residues),
+        "n_sheet": sum(res.ss == "E" for res in residues),
+        "n_coil": sum(res.ss == "C" for res in residues),
+        **_span_counts(residues, pairs),
+    }
+
+
+def write_contact_comparison(out_dir: Path) -> None:
+    """Lysozyme and myoglobin side by side, one contact rule."""
+    panels = (
+        (LYSOZYME_ID, "lysozyme"),
+        (MYOGLOBIN_ID, "myoglobin"),
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(12.4, 6.0), dpi=140)
+    fig.patch.set_facecolor(PAPER)
+    for ax, (pdb_id, name) in zip(axes, panels):
+        residues = load_chains(cached_pdb(pdb_id))["A"]
+        pairs = ca_contacts(residues)
+        matrix = contact_matrix(len(residues), pairs)
+        n = len(residues)
+        ax.imshow(
+            matrix,
+            cmap=ListedColormap([PAPER, H_COLOR]),
+            interpolation="nearest",
+            origin="upper",
+            vmin=0,
+            vmax=1,
+            extent=(0.5, n + 0.5, n + 0.5, 0.5),
+        )
+        ax.set_title(f"{pdb_id} {name}\n{n} residues, {len(pairs)} contacts", color=INK, pad=8)
+        ax.set_xlabel("residue", color=MUTED)
+        ax.set_ylabel("residue", color=MUTED)
+        _style(ax)
+    fig.suptitle(
+        f"Cα ≤ {CONTACT_CUTOFF:.0f} Å, |i−j| ≥ {MIN_SEPARATION}",
+        color=INK,
+    )
+    fig.tight_layout()
+    dest = out_dir / "contact-compare.png"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(dest, dpi=140)
+    plt.close(fig)
 
 
 def _patch(residues_by_chain, chain_id: str, resseq: int, cutoff: float = CONTACT_CUTOFF):
@@ -268,6 +343,8 @@ def run_phase2(out_dir: Path | None = None) -> dict:
     out_dir = Path(out_dir or "artifacts")
     out_dir.mkdir(parents=True, exist_ok=True)
     lysozyme = write_lysozyme(out_dir)
+    myoglobin = write_myoglobin(out_dir)
+    write_contact_comparison(out_dir)
     sickle = write_sickle(out_dir)
     print(f"1LYZ residues:  {lysozyme['residues']}")
     print(f"contacts:       {lysozyme['contacts']}  (Cα ≤ {CONTACT_CUTOFF:.0f} Å, |i−j| ≥ {MIN_SEPARATION})")
@@ -277,6 +354,15 @@ def run_phase2(out_dir: Path | None = None) -> dict:
     )
     print(
         f"secondary:      helix {lysozyme['n_helix']}    sheet {lysozyme['n_sheet']}    coil {lysozyme['n_coil']}"
+    )
+    print(
+        f"1MBN residues:  {myoglobin['residues']}    contacts {myoglobin['contacts']}"
+    )
+    print(
+        f"1MBN spans:     4–6 {myoglobin['near']}    7–20 {myoglobin['mid']}    >20 {myoglobin['far']}"
+    )
+    print(
+        f"1MBN secondary: helix {myoglobin['n_helix']}    sheet {myoglobin['n_sheet']}    coil {myoglobin['n_coil']}"
     )
     print(
         f"2HHB β6:        chain B {sickle['beta_b']}    chain D {sickle['beta_d']}"
@@ -289,7 +375,9 @@ def run_phase2(out_dir: Path | None = None) -> dict:
         "lysozyme-contact-map.png",
         "lysozyme-hydrophobicity.png",
         "lysozyme-hp-core.html",
+        "myoglobin-contact-map.png",
+        "contact-compare.png",
         "sickle-cell-glu6val.png",
     ):
         print(f"wrote:          {out_dir / name}")
-    return {"lysozyme": lysozyme, "sickle": sickle}
+    return {"lysozyme": lysozyme, "myoglobin": myoglobin, "sickle": sickle}

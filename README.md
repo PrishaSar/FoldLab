@@ -69,6 +69,8 @@ Demos from the same machine:
 
 Hen egg-white lysozyme is 1LYZ. A contact is a Cα pair at most 8 Å apart with sequence separation at least 4. On this file that is **311** contacts. A residue is H when its Kyte–Doolittle score is greater than 0, and P otherwise. 1LYZ has 45 H and 84 P. Mean Cα distance to the centroid is 11.28 Å for H and 14.08 Å for P, so the hydrophobic set sits closer to the core. HELIX and SHEET records label 35 helix residues, 20 sheet residues, and 74 coil.
 
+Sperm whale myoglobin is 1MBN, drawn with that same contact rule. Chain A has 153 residues and **262** contacts. HELIX and SHEET records label 118 helix residues and no sheet. Of the 262 contacts, 147 join residues only 4 to 6 apart. The side-by-side figure is `artifacts/contact-compare.png`.
+
 The sickle-cell figure uses 2HHB, deoxy hemoglobin A, where both β chains still have glutamate at residue 6. Valine scores 4.2 on the same scale, so the class of that site would change from P to H. The drawing relabels the published site. It does not rebuild a side chain, and it is not a recipe for making the variant.
 
 ```bash
