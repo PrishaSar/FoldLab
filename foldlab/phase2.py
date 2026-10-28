@@ -77,7 +77,7 @@ def write_contact_map(residues, pairs, path: Path, title: str | None = None) -> 
     return len(pairs)
 
 
-def write_hydrophobicity(residues, path: Path) -> dict:
+def write_hydrophobicity(residues, path: Path, title: str | None = None) -> dict:
     scores = np.array([kd_score(res.name1) for res in residues])
     classes = [hp_class(res.name1) for res in residues]
     smooth = window_profile(scores, PROFILE_WINDOW)
@@ -101,7 +101,8 @@ def write_hydrophobicity(residues, path: Path) -> dict:
     ax.axhline(0, color=MUTED, linewidth=0.8)
     ax.set_ylabel("Kyte–Doolittle", color=MUTED)
     ax.set_title(
-        f"1LYZ hydropathy    H {h_mean:.2f} Å from centroid    P {p_mean:.2f} Å",
+        title
+        or f"1LYZ hydropathy    H {h_mean:.2f} Å from centroid    P {p_mean:.2f} Å",
         color=INK,
         pad=10,
     )

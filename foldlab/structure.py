@@ -136,4 +136,8 @@ def mean_centroid_distance(residues: list[Residue], hp: list[str]) -> tuple[floa
     center = coords.mean(axis=0)
     dist = np.sqrt(np.sum((coords - center) ** 2, axis=1))
     labels = np.array(hp)
-    return float(dist[labels == "H"].mean()), float(dist[labels == "P"].mean())
+    h = dist[labels == "H"]
+    p = dist[labels == "P"]
+    h_mean = float(h.mean()) if h.size else float("nan")
+    p_mean = float(p.mean()) if p.size else float("nan")
+    return h_mean, p_mean

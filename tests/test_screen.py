@@ -18,6 +18,8 @@ class ScreenTests(unittest.TestCase):
             "Sickle-cell picture",
             "Transformer score",
             "Train again",
+            "Load protein",
+            "Protein code",
         ):
             self.assertIn(label, PAGE)
         self.assertIn("Train again is the only button that trains", PAGE)
@@ -63,3 +65,21 @@ class ScreenHttpTests(unittest.TestCase):
         self.assertFalse(payload["trained"])
         self.assertEqual(payload["mae"], SAVED_SCORE["mae"])
         self.assertEqual(payload["baseline_mae"], SAVED_SCORE["baseline_mae"])
+
+    def test_protein_route_rejects_a_name(self):
+        request = urllib.request.Request(
+            f"http://127.0.0.1:{self.port}/run/protein",
+            data=b'{"code":"lysozyme"}',
+            method="POST",
+        )
+        with self.assertRaises(urllib.error.HTTPError) as caught:
+            urllib.request.urlopen(request)
+        self.assertEqual(caught.exception.code, 400)
+        body = json.loads(caught.exception.read().decode())
+        self.assertIn("1LYZ", body["error"])
+
+    def test_protein_files_stay_inside_the_folder(self):
+        for path in ("/proteins/../data/1lyz.pdb", "/proteins/1lyz-a/../../data/1lyz.pdb"):
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                urllib.request.urlopen(f"http://127.0.0.1:{self.port}{path}")
+            self.assertEqual(caught.exception.code, 404)

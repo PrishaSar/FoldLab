@@ -91,7 +91,7 @@ python -m foldlab.learn
 python -m foldlab.screen
 ```
 
-Opens [http://127.0.0.1:8765](http://127.0.0.1:8765). The buttons run the same short fold, the same long fold, and the same Phase 2 pictures. Transformer score shows the saved test numbers. Train again is a separate button and is the only one that trains.
+Opens [http://127.0.0.1:8765](http://127.0.0.1:8765). The protein box takes a 4-character code, such as `1LYZ` or `1MBN`, downloads that structure once, and draws the contact map, the oiliness chart, and a 3D view. Add a chain when the file has several, for example `2HHB B`. The other buttons run the same short fold, the same long fold, and the same Phase 2 pictures. Transformer score shows the saved test numbers. Train again is a separate button and is the only one that trains.
 
 ## Out of scope
 

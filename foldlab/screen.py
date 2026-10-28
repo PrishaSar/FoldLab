@@ -12,6 +12,7 @@ written down. Training runs only from the separate button.
 from __future__ import annotations
 
 import json
+import re
 import threading
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -46,6 +47,15 @@ FILES = {
     "myoglobin-contact-map.png": "image/png",
     "contact-compare.png": "image/png",
     "sickle-cell-glu6val.png": "image/png",
+}
+
+_PROTEIN_PATH = re.compile(
+    r"^/proteins/([0-9][a-z0-9]{3}-[a-z0-9])/(contact\.png|oiliness\.png|view\.html)$"
+)
+_PROTEIN_TYPES = {
+    "contact.png": "image/png",
+    "oiliness.png": "image/png",
+    "view.html": "text/html; charset=utf-8",
 }
 
 _JOB = threading.Lock()
@@ -88,6 +98,31 @@ PAGE = """<!DOCTYPE html>
     background: white;
     border: 1px solid #d6d0c4;
   }
+  iframe.viewer {
+    width: 100%;
+    height: 720px;
+    margin-top: 0.8rem;
+    background: white;
+    border: 1px solid #d6d0c4;
+  }
+  form.load {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+    margin: 0 0 0.35rem;
+  }
+  input[name="code"] {
+    font: inherit;
+    width: 9rem;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #1c1917;
+    border-radius: 4px;
+    background: white;
+  }
+  @media (max-width: 700px) {
+    iframe.viewer { height: 480px; }
+  }
   figcaption { font-size: 0.95rem; margin-top: 0.3rem; }
   a { color: #9a3412; }
   .note { font-size: 0.95rem; color: #44403c; margin-top: 0.8rem; }
@@ -96,7 +131,13 @@ PAGE = """<!DOCTYPE html>
 <body>
 <main>
   <h1>FoldLab</h1>
-  <p class="lead">Toy folds and protein pictures, on this computer.</p>
+  <p class="lead">Load a protein by its code, or play with the toy folds below.</p>
+  <form id="load" class="load">
+    <label for="code">Protein code</label>
+    <input id="code" name="code" placeholder="1LYZ" maxlength="16" autocomplete="off">
+    <button type="submit">Load protein</button>
+  </form>
+  <p class="note">A 4-character code from the public structure archive. For one chain, type 2HHB B.</p>
   <div class="actions">
     <button type="button" data-run="short">Short toy fold</button>
     <button type="button" data-run="long">Long toy fold</button>
@@ -112,6 +153,8 @@ PAGE = """<!DOCTYPE html>
 </main>
 <script>
 const buttons = document.querySelectorAll("button[data-run]");
+const loadForm = document.querySelector("#load");
+const loadButton = loadForm.querySelector("button");
 const status = document.querySelector("#status");
 const out = document.querySelector("#out");
 
@@ -133,22 +176,37 @@ function show(data) {
     }
     out.appendChild(fig);
   });
+  if (data.frame) {
+    const frame = document.createElement("iframe");
+    frame.className = "viewer";
+    frame.src = data.frame.href;
+    frame.title = data.frame.label || "3D view";
+    out.appendChild(frame);
+  }
   if (data.link) {
     const a = document.createElement("a");
     a.href = data.link.href;
     a.textContent = data.link.label;
+    a.target = "_blank";
     out.appendChild(a);
   }
 }
 
-async function run(name) {
+async function run(name, body) {
   buttons.forEach((button) => { button.disabled = true; });
+  loadButton.disabled = true;
   status.textContent = name === "train"
     ? "Training again. This takes a little while."
-    : "Working…";
+    : name === "protein"
+      ? "Fetching the structure…"
+      : "Working…";
   out.replaceChildren();
   try {
-    const res = await fetch("/run/" + name, { method: "POST" });
+    const res = await fetch("/run/" + name, {
+      method: "POST",
+      headers: body ? {"Content-Type": "application/json"} : undefined,
+      body: body ? JSON.stringify(body) : "",
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "That did not work.");
     show(data);
@@ -157,11 +215,16 @@ async function run(name) {
     status.textContent = err.message || "That did not work.";
   } finally {
     buttons.forEach((button) => { button.disabled = false; });
+    loadButton.disabled = false;
   }
 }
 
 buttons.forEach((button) => {
   button.addEventListener("click", () => run(button.dataset.run));
+});
+loadForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  run("protein", {code: new FormData(loadForm).get("code") || ""});
 });
 </script>
 </body>
@@ -335,6 +398,70 @@ def run_sickle() -> dict:
     }
 
 
+def _protein_url(folder: str, name: str) -> str:
+    path = ARTIFACTS / "proteins" / folder / name
+    stamp = int(path.stat().st_mtime) if path.is_file() else 0
+    return f"/proteins/{folder}/{name}?v={stamp}"
+
+
+def _distance(value: float) -> str:
+    if value != value:
+        return "no residues of that kind"
+    return f"{value:.2f} Å from the center"
+
+
+def run_protein(raw: bytes) -> dict:
+    from foldlab.intake import build_protein
+
+    try:
+        payload = json.loads(raw.decode() or "{}")
+    except json.JSONDecodeError as exc:
+        from foldlab.intake import ProteinError
+
+        raise ProteinError("Type a protein code, such as 1LYZ.") from exc
+    info = build_protein(str(payload.get("code", "")), ARTIFACTS / "proteins")
+    name = info["name"] or "This chain"
+    others = ""
+    if info["other_chains"]:
+        listed = ", ".join(info["other_chains"])
+        example = info["other_chains"][0]
+        others = (
+            f" Other chains in the file: {listed}. "
+            f"Load one with {info['code']} {example}."
+        )
+    view = _protein_url(info["folder"], "view.html")
+    return {
+        "text": (
+            f"{name}. Code {info['code']}, chain {info['chain']}. "
+            f"{info['residues']} residues, {info['contacts']} close pairs. "
+            f"{info['n_h']} oily and {info['n_p']} watery. "
+            f"Oily residues average {_distance(info['h_centroid'])}; "
+            f"watery ones average {_distance(info['p_centroid'])}. "
+            f"Helix {info['n_helix']}, sheet {info['n_sheet']}, coil {info['n_coil']}. "
+            "In the 3D view, rust is oily and blue is watery."
+            + others
+        ),
+        "images": [
+            _image_url(
+                _protein_url(info["folder"], "contact.png"),
+                "Contact map",
+                "Contact map. Dark marks mean those parts sit close together.",
+            ),
+            _image_url(
+                _protein_url(info["folder"], "oiliness.png"),
+                "Oiliness chart",
+                "Oiliness chart. Higher means oilier.",
+            ),
+        ],
+        "frame": {"href": view, "label": "3D view"},
+        "link": {"href": view, "label": "Open the 3D view"},
+    }
+
+
+def _image_url(src: str, alt: str, caption: str) -> dict:
+    return {"src": src, "alt": alt, "caption": caption}
+
+
 def run_train() -> dict:
     from foldlab.learn import generate_dataset, load_dataset, train_and_evaluate
 
@@ -351,6 +478,7 @@ ACTIONS = {
     "sickle": run_sickle,
     "score": saved_score,
     "train": run_train,
+    "protein": run_protein,
 }
 
 
@@ -375,20 +503,33 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self._send(200, FILES[name], file_path.read_bytes())
             return
+        match = _PROTEIN_PATH.fullmatch(path)
+        if match:
+            folder, name = match.groups()
+            file_path = ARTIFACTS / "proteins" / folder / name
+            if not file_path.is_file():
+                self._send(404, "text/plain; charset=utf-8", b"That picture has not been written yet.\n")
+                return
+            self._send(200, _PROTEIN_TYPES[name], file_path.read_bytes())
+            return
         self._send(404, "text/plain; charset=utf-8", b"Not found.\n")
 
     def do_POST(self) -> None:
         length = int(self.headers.get("Content-Length", "0") or 0)
-        if length:
-            self.rfile.read(length)
+        raw = self.rfile.read(length) if length else b""
         path = urlparse(self.path).path
         action = path.removeprefix("/run/") if path.startswith("/run/") else ""
         if action not in ACTIONS:
             self._json(404, {"error": "No such button."})
             return
+        from foldlab.intake import ProteinError
+
         try:
             with _JOB:
-                payload = ACTIONS[action]()
+                payload = ACTIONS[action](raw) if action == "protein" else ACTIONS[action]()
+        except ProteinError as exc:
+            self._json(400, {"error": str(exc)})
+            return
         except Exception:
             traceback.print_exc()
             self._json(500, {"error": "That did not work."})
