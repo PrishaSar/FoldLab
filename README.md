@@ -83,7 +83,15 @@ python -m foldlab phase2
 python -m foldlab.learn
 ```
 
+## Local screen
+
+```bash
+python -m foldlab.screen
+```
+
+Opens [http://127.0.0.1:8765](http://127.0.0.1:8765). The buttons run the same short fold, the same long fold, and the same Phase 2 pictures. Transformer score shows the saved test numbers. Train again is a separate button and is the only one that trains.
+
 ## Out of scope
 
-No expression, purification, synthesis, or wet-lab mutagenesis. No database, auth, or web service.
+No expression, purification, synthesis, or wet-lab mutagenesis. No database or auth. The screen is only this computer.
 
